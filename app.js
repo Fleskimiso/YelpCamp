@@ -38,7 +38,7 @@ app.use(express.static(path.join(__dirname, "/public")));
 
 const sessionConfig = {
     secret: "This should be better seret",
-    resave: false,
+    resave: true,
     saveUninitialized: true,
     cookie: {
         expiry: Date.now() + 1000 * 3600 * 24 * 7,
@@ -56,6 +56,7 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
 app.use((req,res,next) =>{
+    res.locals.currentUser = req.user;
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
     next();
