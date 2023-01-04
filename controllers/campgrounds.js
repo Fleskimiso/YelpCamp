@@ -48,17 +48,17 @@ module.exports.updateCampground = async (req, res) => {
     if (req.files) {
         const imgs = req.files.map(f => ({ url: f.path, filename: f.filename }));
         campground.images.push(...imgs);
-        console.log(imgs);;
+      //  console.log(imgs);;
         await campground.save();
     }
     if (req.body.deleteImages) {
         for (let filename of req.body.deleteImages) {
             cloudinary.uploader.destroy(filename).then((success) => {
-                // console.log(success);
-                // console.log("Success");
+                //  console.log(success);
+                //  console.log("Success");
             }).catch((e) => {
-                // console.log(e);
-                // console.log("No item found");
+                //  console.log(e);
+                //  console.log("No item found");
             })
         }
         await Campground.updateOne(
