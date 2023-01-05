@@ -7,6 +7,7 @@ const path = require("path");
 const ejsMate = require("ejs-mate");
 const methodOverride = require("method-override");
 const session = require("express-session");
+const MongoDBStore = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const localStrategy = require("passport-local");
@@ -24,8 +25,9 @@ const reviewsRoutes = require("./routes/reviews");
 const app = express();
 
 mongoose.set("strictQuery", true);
-//mongoose.set("runValidators",true);(
-mongoose.connect("mongodb://127.0.0.1:27017/yelp-camp", function (error) {
+
+const dbUrl =  process.env.DB_URL || "mongodb://127.0.0.1:27017/yelp-camp";
+mongoose.connect(dbUrl, function (error) {
     if (error) {
         console.log(error);
     } else {
@@ -42,9 +44,22 @@ app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "/public")));
 app.use(mongoSanitaze());
 
+const secret = process.env.SECRET || "This should be better secret"
+
+const sessionStore = MongoDBStore.create({
+    mongoUrl: dbUrl,
+    touchAfter: 24*3600,
+    secret: secret,
+});
+
+sessionStore.on("error", function(e){
+    console.log("Session store error", e);
+});
+
 const sessionConfig = {
+    store: sessionStore,
     name: "session",
-    secret: "This should be better seret",
+    secret: secret,
     resave: true,
     saveUninitialized: true,
     cookie: {
@@ -99,7 +114,7 @@ app.use(
                     "'self'",
                     "blob:",
                     "data:",
-                    "https://res.cloudinary.com/duq6xzgsb/", 
+                    "https://res.cloudinary.com/duq6xzgsb/",
                     "https://images.unsplash.com/",
                     "https://*.unsplash.com"
                 ],
@@ -123,11 +138,11 @@ app.use((req, res, next) => {
     next();
 });
 
-app.get("/fakeuser", async (req, res) => {
-    const user = new User({ email: "salk@gmail.com", username: "dsfsdf" });
-    const newUser = await User.register(user, "chicken");
-    res.send(newUser);
-});
+// app.get("/fakeuser", async (req, res) => {
+//     const user = new User({ email: "salk@gmail.com", username: "dsfsdf" });
+//     const newUser = await User.register(user, "chicken");
+//     res.send(newUser);
+// });
 
 app.use("/", userRoutes);
 app.use("/campgrounds", campgroundsRoutes);
@@ -148,6 +163,8 @@ app.use((err, req, res, next) => {
     res.status(statusCode).render("error", { err });
 });
 
-app.listen(3000, () => {
+const port = process.env.PORT || 3000;
+
+app.listen(port, () => {
     console.log("Listening on port 300");
 });
